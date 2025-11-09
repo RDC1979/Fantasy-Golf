@@ -1,0 +1,131 @@
+import React, { useState } from 'react';
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { Input } from "@/components/ui/input";
+
+const golfers = [ /* same golfer data as before */ ];
+
+export default function FantasyGolfApp() {
+  const budget = 40;
+  const [step, setStep] = useState('pickTeam'); // pickTeam | nameTeam | joinLeague
+  const [team, setTeam] = useState([]);
+  const [captain, setCaptain] = useState(null);
+  const [teamName, setTeamName] = useState('');
+
+  const totalSpent = team.reduce((sum, p) => sum + p.price, 0);
+  const remaining = budget - totalSpent;
+
+  const togglePlayer = (golfer) => {
+    if (team.find((p) => p.name === golfer.name)) {
+      setTeam(team.filter((p) => p.name !== golfer.name));
+      if (captain?.name === golfer.name) setCaptain(null);
+    } else if (team.length < 5 && remaining >= golfer.price) {
+      setTeam([...team, golfer]);
+    }
+  };
+
+  const handleCaptain = (golfer) => {
+    if (captain?.name === golfer.name) setCaptain(null);
+    else setCaptain(golfer);
+  };
+
+  const getCardColor = (golfer, inTeam) => {
+    if (golfer.tour === 'LIV') return inTeam ? 'bg-purple-100' : 'bg-purple-50';
+    return inTeam ? 'bg-green-50' : 'bg-white';
+  };
+
+  if (step === 'nameTeam') {
+    return (
+      <div className="p-6 space-y-6 bg-[url('/golf-background.jpg')] bg-cover min-h-screen">
+        <h1 className="text-3xl font-bold text-center">🏌️‍♂️ Name Your Fantasy Golf Team</h1>
+        <Card className="p-6 max-w-md mx-auto">
+          <Input
+            type="text"
+            placeholder="Enter team name"
+            value={teamName}
+            onChange={(e) => setTeamName(e.target.value)}
+            className="mb-4"
+          />
+          <Button disabled={!teamName} onClick={() => setStep('joinLeague')} className="w-full">
+            Continue to Join League
+          </Button>
+        </Card>
+      </div>
+    );
+  }
+
+  if (step === 'joinLeague') {
+    return (
+      <div className="p-6 space-y-6 bg-[url('/golf-background.jpg')] bg-cover min-h-screen">
+        <h1 className="text-3xl font-bold text-center">🏆 Join a League</h1>
+        <Card className="p-6 max-w-md mx-auto space-y-4">
+          <Button onClick={() => alert('Joined Public League!')} className="w-full">Join Public League</Button>
+          <Button onClick={() => alert('Enter Private Code')} className="w-full">Join Private League</Button>
+          <Button onClick={() => alert('Created New League!')} className="w-full">Create New League</Button>
+          <Button variant="outline" onClick={() => setStep('pickTeam')} className="w-full">Back to My Team</Button>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-6 space-y-6 bg-[url('/golf-background.jpg')] bg-cover min-h-screen">
+      <h1 className="text-3xl font-bold text-center">🏌️‍♂️ Fantasy Golf - Pick Your Team</h1>
+
+      <Card className="p-4">
+        <h2 className="text-xl font-semibold mb-2">Budget</h2>
+        <Progress value={(remaining / budget) * 100} className="mb-2" />
+        <p>Remaining: £{remaining.toFixed(1)}m / £{budget}m</p>
+      </Card>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {golfers.map((g) => {
+          const inTeam = team.find((p) => p.name === g.name);
+          const isCaptain = captain?.name === g.name;
+          return (
+            <Card key={g.name} className={`p-4 ${getCardColor(g, inTeam)}`}>
+              <CardContent className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h3 className="text-lg font-bold">{g.name}</h3>
+                    <p className="text-sm text-gray-600">£{g.price}m • Rank {g.rank} {g.rookie && '(Rookie)'} {g.tour ? `• ${g.tour}` : ''}</p>
+                  </div>
+                  <Button variant={inTeam ? 'destructive' : 'default'} onClick={() => togglePlayer(g)}>
+                    {inTeam ? 'Remove' : 'Add'}
+                  </Button>
+                </div>
+                {inTeam && (
+                  <Button variant={isCaptain ? 'secondary' : 'outline'} onClick={() => handleCaptain(g)}>
+                    {isCaptain ? 'Captain' : 'Set as Captain'}
+                  </Button>
+                )}
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+
+      <Card className="p-4">
+        <h2 className="text-xl font-semibold mb-2">My Team</h2>
+        {team.length === 0 ? (
+          <p className="text-gray-500">No players selected yet.</p>
+        ) : (
+          <ul className="list-disc pl-6">
+            {team.map((p) => (
+              <li key={p.name}>
+                {p.name} {captain?.name === p.name && '⭐ (Captain)'} {p.tour ? `• ${p.tour}` : ''}
+              </li>
+            ))}
+          </ul>
+        )}
+      </Card>
+
+      {team.length === 5 && (
+        <Button className="w-full" onClick={() => setStep('nameTeam')}>
+          Continue to Team Name
+        </Button>
+      )}
+    </div>
+  );
+}
